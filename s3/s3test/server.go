@@ -315,7 +315,7 @@ func (srv *Server) resourceForURL(u *url.URL) (r resource) {
 	return objr
 }
 
-// nullResource has error stubs for all resource methods.
+// nullResource represents the root path.
 type nullResource struct{}
 
 func notAllowed() interface{} {
@@ -324,9 +324,39 @@ func notAllowed() interface{} {
 }
 
 func (nullResource) put(a *action) interface{}    { return notAllowed() }
-func (nullResource) get(a *action) interface{}    { return notAllowed() }
 func (nullResource) post(a *action) interface{}   { return notAllowed() }
 func (nullResource) delete(a *action) interface{} { return notAllowed() }
+
+// GET on root returns a list of buckets.
+func (nullResource) get(a *action) interface{} {
+	type Owner struct {
+		DisplayName string
+		ID          string
+	}
+	type Bucket struct {
+		Name         string
+		CreationDate time.Time
+	}
+	type Buckets struct {
+		XMLName xml.Name `xml:"Buckets"`
+		Buckets []Bucket `xml:"Bucket"`
+	}
+	type ListAllMyBucketsResult struct {
+		Owner   Owner
+		Buckets Buckets
+	}
+
+	resp := &ListAllMyBucketsResult{}
+
+	for _, bucket := range a.srv.buckets {
+		resp.Buckets.Buckets = append(resp.Buckets.Buckets, Bucket{
+			Name:         bucket.name,
+			CreationDate: bucket.ctime,
+		})
+	}
+
+	return resp
+}
 
 const timeFormat = "2006-01-02T15:04:05.000Z"
 const lastModifiedTimeFormat = "Mon, 2 Jan 2006 15:04:05 GMT"
@@ -676,7 +706,7 @@ func (objr objectResource) get(a *action) interface{} {
 	// TODO x-amz-request-id
 	h.Set("Content-Length", fmt.Sprint(len(data)))
 	h.Set("ETag", "\""+hex.EncodeToString(obj.checksum)+"\"")
-	h.Set("Last-Modified", obj.mtime.Format(lastModifiedTimeFormat))
+	h.Set("Last-Modified", obj.mtime.UTC().Format(lastModifiedTimeFormat))
 
 	if status != http.StatusOK {
 		a.w.WriteHeader(status)
