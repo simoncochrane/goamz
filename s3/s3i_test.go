@@ -185,6 +185,22 @@ func (s *ClientTests) TestBasicFunctionality(c *check.C) {
 	c.Assert(err, check.IsNil)
 	defer b.Del("name2")
 
+	result, err := b.PutCopy("name2copy", s3.Private, s3.CopyOptions{
+		ContentType:       "text/plain",
+		MetadataDirective: "REPLACE",
+	}, b.Name+"/name2")
+	c.Assert(err, check.IsNil)
+	_, err = time.Parse(time.RFC3339, result.LastModified)
+	c.Check(err, check.IsNil)
+	defer b.Del("name2copy")
+
+	// copying name2->name2 should leave data intact
+	_, err = b.PutCopy("name2", s3.Private, s3.CopyOptions{
+		ContentType:       "text/plain",
+		MetadataDirective: "REPLACE",
+	}, b.Name+"/name2")
+	c.Check(err, check.IsNil)
+
 	rc, err := b.GetReader("name2")
 	c.Assert(err, check.IsNil)
 	data, err = ioutil.ReadAll(rc)
@@ -214,6 +230,8 @@ func (s *ClientTests) TestBasicFunctionality(c *check.C) {
 	err = b.Del("name")
 	c.Assert(err, check.IsNil)
 	err = b.Del("name2")
+	c.Assert(err, check.IsNil)
+	err = b.Del("name2copy")
 	c.Assert(err, check.IsNil)
 
 	err = b.DelBucket()
