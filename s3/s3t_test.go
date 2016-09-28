@@ -1,13 +1,14 @@
 package s3_test
 
 import (
-	"github.com/AdRoll/goamz/aws"
-	"github.com/AdRoll/goamz/s3"
-	"github.com/AdRoll/goamz/s3/s3test"
-	"github.com/AdRoll/goamz/testutil"
-	"gopkg.in/check.v1"
 	"io/ioutil"
 	"time"
+
+	"github.com/simoncochrane/goamz/aws"
+	"github.com/simoncochrane/goamz/s3"
+	"github.com/simoncochrane/goamz/s3/s3test"
+	"github.com/simoncochrane/goamz/testutil"
+	"gopkg.in/check.v1"
 )
 
 type LocalServer struct {
