@@ -74,6 +74,9 @@ type Config struct {
 	// Clock used to set mtime when updating an object. If nil,
 	// use the real clock.
 	Clock Clock
+
+	// Latency simulates latency in S3 requests. All requests will sleep for the given duration.
+	Latency time.Duration
 }
 
 func (c *Config) send409Conflict() bool {
@@ -169,6 +172,7 @@ func NewServer(config *Config) (*Server, error) {
 		config:   config,
 	}
 	go http.Serve(l, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		time.Sleep(config.Latency)
 		srv.serveHTTP(w, req)
 	}))
 	return srv, nil
